@@ -14,7 +14,6 @@
         @foreach ($skuOptions as $optionName => $values)
             <label>{{ ucfirst($optionName) }}:</label>
             <select name="{{ $optionName }}" onchange="this.form.submit()">
-                <option value="">選択してください</option> <!-- 追加: デフォルトの空選択肢 -->
                 @foreach ($values as $value)
                     <option value="{{ $value }}" {{ request($optionName) == $value ? 'selected' : '' }}>
                         {{ $value }}
