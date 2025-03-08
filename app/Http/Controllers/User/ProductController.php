@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Sku;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -11,11 +12,46 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Product $product)
+    public function index(Request $request, Product $product)
     {
-        $product = Product::find($product->id);
+        $product = Product::with('skus.options')->findOrFail($product->id);
 
 
+    // SKUごとのオプションを正しく分類する
+    $skuOptions = [];
+    foreach ($product->skus as $sku) {
+        foreach ($sku->options as $option) {
+            // 'options.name'（例: "色", "サイズ"）をキーに、'sku_options.name'（例: "赤", "M"）を値として格納
+            if (!isset($skuOptions[$option->name])) {
+                $skuOptions[$option->name] = [];
+            }
+            $skuOptions[$option->name][] = $option->pivot->name;
+        }
+    }
+
+    // 各オプションのユニークな値を取得（重複削除）
+    foreach ($skuOptions as &$values) {
+        $values = array_values(array_unique($values));
+    }
+    unset($values); // 参照渡しを解除
+
+    // クエリパラメータから選択されたオプションを取得（デフォルト値：最初のオプション）
+    $selectedOptions = [];
+    foreach ($skuOptions as $key => $values) {
+        $selectedOptions[$key] = $request->query($key, $values[0] ?? '');
+    }
+
+
+    // 選択されたオプションに該当するSKUを取得
+    $selectedSku = Sku::where('product_id', $product->id)
+        ->whereHas('options', function ($query) use ($selectedOptions) {
+            foreach ($selectedOptions as $key => $value) {
+                $query->where('options.name', $key)->where('sku_options.name', $value);
+            }
+        }, count($selectedOptions))
+        ->first();
+
+        return view('web.user.product.index', compact('product', 'skuOptions', 'selectedOptions', 'selectedSku'));
     }
 
     /**

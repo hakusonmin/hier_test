@@ -13,6 +13,15 @@ return new class extends Migration
     {
         Schema::create('sku_options', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
+            $table->foreignId('sku_id')
+                ->constrained()
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
+            $table->foreignId('option_id')
+                ->constrained()
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
             $table->timestamps();
         });
     }

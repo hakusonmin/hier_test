@@ -28,7 +28,7 @@ class CategoryController extends Controller
         $products = null;//初期化
 
         if ($categories->isEmpty()) {
-            $products = Product::where('category_id', '$category->id')
+            $products = Product::where('category_id', $category->id)
                 ->get();
         }
 
