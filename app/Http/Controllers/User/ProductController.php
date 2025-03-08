@@ -18,18 +18,13 @@ class ProductController extends Controller
 
     $product = Product::with('skus.options')->findOrFail($product->id);
 
-    // SKUごとのオプションを正しく分類する
     // 'options.name'（例: "色", "サイズ"）をキーに、'sku_options.name'（例: "赤", "M"）を値として格納
     $skuOptions = [];
     foreach ($product->skus as $sku) {
         foreach ($sku->options as $option) {
-            if (!isset($skuOptions[$option->name])) {  // 'options.name'（例: "色", "サイズ"）をキーに、'sku_options.name'（例: "赤", "M"）を値として格納
-                $skuOptions[$option->name] = [];
-            }
             $skuOptions[$option->name][] = $option->pivot->name;
         }
     }
-
     // 各オプションのユニークな値を取得（重複削除）
     foreach ($skuOptions as &$values) {
         $values = array_values(array_unique($values));
@@ -38,14 +33,11 @@ class ProductController extends Controller
 
     // クエリパラメータから選択されたオプションを取得（デフォルト値：最初のオプション）
     $selectedOptions = [];
-
     foreach ($skuOptions as $key => $values) {
         $selectedOptions[$key] = $request->query($key, isset($values[0]) ? $values[0] : '');
     }
-
     // 選択されたオプションに該当するSKUを取得
     $selectedSku = Sku::where('product_id', $product->id);
-
     foreach ($selectedOptions as $key => $value) {
         $selectedSku->whereHas('options', function ($query) use ($key, $value) {
             $query->where('options.name', $key)
