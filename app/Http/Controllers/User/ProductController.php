@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Sku;
+use App\Models\SkuOption;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -14,15 +15,15 @@ class ProductController extends Controller
      */
     public function index(Request $request, Product $product)
     {
-        $product = Product::with('skus.options')->findOrFail($product->id);
 
+    $product = Product::with('skus.options')->findOrFail($product->id);
 
     // SKUごとのオプションを正しく分類する
+    // 'options.name'（例: "色", "サイズ"）をキーに、'sku_options.name'（例: "赤", "M"）を値として格納
     $skuOptions = [];
     foreach ($product->skus as $sku) {
         foreach ($sku->options as $option) {
-            // 'options.name'（例: "色", "サイズ"）をキーに、'sku_options.name'（例: "赤", "M"）を値として格納
-            if (!isset($skuOptions[$option->name])) {
+            if (!isset($skuOptions[$option->name])) {  // 'options.name'（例: "色", "サイズ"）をキーに、'sku_options.name'（例: "赤", "M"）を値として格納
                 $skuOptions[$option->name] = [];
             }
             $skuOptions[$option->name][] = $option->pivot->name;
@@ -37,19 +38,22 @@ class ProductController extends Controller
 
     // クエリパラメータから選択されたオプションを取得（デフォルト値：最初のオプション）
     $selectedOptions = [];
+
     foreach ($skuOptions as $key => $values) {
-        $selectedOptions[$key] = $request->query($key, $values[0] ?? '');
+        $selectedOptions[$key] = $request->query($key, isset($values[0]) ? $values[0] : '');
     }
 
-
     // 選択されたオプションに該当するSKUを取得
-    $selectedSku = Sku::where('product_id', $product->id)
-        ->whereHas('options', function ($query) use ($selectedOptions) {
-            foreach ($selectedOptions as $key => $value) {
-                $query->where('options.name', $key)->where('sku_options.name', $value);
-            }
-        }, count($selectedOptions))
-        ->first();
+    $selectedSku = Sku::where('product_id', $product->id);
+
+    foreach ($selectedOptions as $key => $value) {
+        $selectedSku->whereHas('options', function ($query) use ($key, $value) {
+            $query->where('options.name', $key)
+                  ->where('sku_options.name', $value);
+        });
+    }
+
+    $selectedSku = $selectedSku->first();
 
         return view('web.user.product.index', compact('product', 'skuOptions', 'selectedOptions', 'selectedSku'));
     }
