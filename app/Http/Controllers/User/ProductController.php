@@ -38,6 +38,7 @@ class ProductController extends Controller
     }
     // 選択されたオプションに該当するSKUを取得
     $selectedSku = Sku::where('product_id', $product->id);
+
     foreach ($selectedOptions as $key => $value) {
         $selectedSku->whereHas('options', function ($query) use ($key, $value) {
             $query->where('options.name', $key)
