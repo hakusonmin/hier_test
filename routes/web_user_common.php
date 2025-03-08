@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\User\SkuController;
+use App\Http\Controllers\User\CategoryController;
+use App\Http\Controllers\User\ProductController;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Sku;
@@ -8,15 +11,11 @@ Route::prefix('user')
     ->middleware('auth')//userはデフォルトなので auth:userとしてはいけない
     ->name('user.')
     ->group(function () {
+        Route::get('/',[CategoryController::class, 'root'])->name('category.root');
 
-        //ユーザーダッシュボードへのルーティング←ここでジャンルのLevel1の奴を呼ぶ
-        Route::get('/', function () {
-            return view('web.user.index');
-        })->name('index');
+        Route::get('/category/{category}',[CategoryController::class, 'index'])->name('category.index');
 
-        Route::resource('categories', Category::class);
+        Route::get('/product/{product}',[ProductController::class, 'index'])->name('product.index');
 
-        Route::resource('products', Product::class);
-
-        Route::resource('skus', Sku::class);
+        Route::get('/sku/{product}',[SkuController::class, 'index'])->name('sku.index');
     });

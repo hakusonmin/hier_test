@@ -4,16 +4,35 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
+
+    public function root()
+    {
+        $categories = Category::where('level', '1')
+            ->get();
+
+        return view('web.user.category.root', compact('categories'));
+    }
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Category $category)
     {
-        //
+        $categories = Category::where('parent_id', $category->id)->get();
+
+        $products = null;//初期化
+
+        if ($categories->isEmpty()) {
+            $products = Product::where('category_id', '$category->id')
+                ->get();
+        }
+
+        return view('web.user.category.index', compact('categories','products'));
     }
 
     /**
