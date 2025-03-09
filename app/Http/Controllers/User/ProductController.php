@@ -16,37 +16,37 @@ class ProductController extends Controller
     public function index(Request $request, Product $product)
     {
 
-    $product = Product::with('skus.options')->findOrFail($product->id);
+        $product = Product::with('skus.options')->findOrFail($product->id);
 
-    // 'options.name'（例: "色", "サイズ"）をキーに、'sku_options.name'（例: "赤", "M"）を値として格納
-    $skuOptions = [];
-    foreach ($product->skus as $sku) {
-        foreach ($sku->options as $option) {
-            $skuOptions[$option->name][] = $option->pivot->name;
+        // 'options.name'（例: "色", "サイズ"）をキーに、'sku_options.name'（例: "赤", "M"）を値として格納
+        $skuOptions = [];
+        foreach ($product->skus as $sku) {
+            foreach ($sku->options as $option) {
+                $skuOptions[$option->name][] = $option->pivot->name;
+            }
         }
-    }
-    // 各オプションのユニークな値を取得（重複削除）
-    foreach ($skuOptions as &$values) {
-        $values = array_values(array_unique($values));
-    }
-    unset($values); // 参照渡しを解除
+        // 各オプションのユニークな値を取得（重複削除）
+        foreach ($skuOptions as &$values) {
+            $values = array_values(array_unique($values));
+        }
+        unset($values); // 参照渡しを解除
 
-    // クエリパラメータから選択されたオプションを取得（デフォルト値：最初のオプション）
-    $selectedOptions = [];
-    foreach ($skuOptions as $key => $values) {
-        $selectedOptions[$key] = $request->query($key, isset($values[0]) ? $values[0] : '');
-    }
-    // 選択されたオプションに該当するSKUを取得
-    $selectedSku = Sku::where('product_id', $product->id);
+        // クエリパラメータから選択されたオプションを取得（デフォルト値：最初のオプション）
+        $selectedOptions = [];
+        foreach ($skuOptions as $key => $values) {
+            $selectedOptions[$key] = $request->query($key, isset($values[0]) ? $values[0] : '');
+        }
+        // 選択されたオプションに該当するSKUを取得
+        $selectedSku = Sku::where('product_id', $product->id);
 
-    foreach ($selectedOptions as $key => $value) {
-        $selectedSku->whereHas('options', function ($query) use ($key, $value) {
-            $query->where('options.name', $key)
-                  ->where('sku_options.name', $value);
-        });
-    }
+        foreach ($selectedOptions as $key => $value) {
+            $selectedSku->whereHas('options', function ($query) use ($key, $value) {
+                $query->where('options.name', $key)
+                    ->where('sku_options.name', $value);
+            });
+        }
 
-    $selectedSku = $selectedSku->first();
+        $selectedSku = $selectedSku->first();
 
         return view('web.user.product.index', compact('product', 'skuOptions', 'selectedOptions', 'selectedSku'));
     }

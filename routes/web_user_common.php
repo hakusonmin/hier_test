@@ -8,14 +8,12 @@ use App\Models\Product;
 use App\Models\Sku;
 
 Route::prefix('user')
-    ->middleware('auth')//userはデフォルトなので auth:userとしてはいけない
+    ->middleware('auth') //userはデフォルトなので auth:userとしてはいけない
     ->name('user.')
     ->group(function () {
-        Route::get('/',[CategoryController::class, 'root'])->name('category.root');
+        Route::get('/', [CategoryController::class, 'root'])->name('category.root');
 
-        Route::get('/category/{category}',[CategoryController::class, 'index'])->name('category.index');
+        Route::get('/category/{category}', [CategoryController::class, 'index'])->name('category.index');
 
-        Route::get('/product/{product}',[ProductController::class, 'index'])->name('product.index');
-
-        Route::get('/sku/{product}',[SkuController::class, 'index'])->name('sku.index');
+        Route::get('/product/{product}', [ProductController::class, 'index'])->name('product.index');
     });
